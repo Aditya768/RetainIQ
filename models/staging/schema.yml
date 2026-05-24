@@ -1,0 +1,86 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Cleaned customer records from raw source"
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: plan
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['STARTER', 'GROWTH', 'PRO', 'ENTERPRISE']
+      - name: mrr
+        tests:
+          - not_null
+
+  - name: stg_subscriptions
+    description: "Cleaned subscription records"
+    columns:
+      - name: subscription_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['ACTIVE', 'CHURNED']
+
+  - name: stg_payments
+    description: "Cleaned payment records"
+    columns:
+      - name: payment_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['SUCCESS', 'FAILED']
+
+  - name: stg_events
+    description: "Cleaned product usage events"
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+
+  - name: stg_support_tickets
+    description: "Cleaned support ticket records"
+    columns:
+      - name: ticket_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+
+  - name: stg_firmographics
+    description: "Company firmographic data"
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_macro_indicators
+    description: "Monthly macroeconomic indicators"
+    columns:
+      - name: month
+        tests:
+          - unique
+          - not_null
