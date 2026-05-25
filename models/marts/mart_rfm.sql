@@ -1,22 +1,19 @@
 with customers as (
-    select * from RETAINIQ.STAGING.stg_customers
+    select * from {{ ref('stg_customers') }}
 ),
-
 subscriptions as (
-    select * from RETAINIQ.STAGING.stg_subscriptions
+    select * from {{ ref('stg_subscriptions') }}
 ),
-
 events as (
     select
         customer_id,
         max(event_date)                         as last_event_date,
         count(*)                                as total_events,
-        count(distinct date_trunc('month', 
+        count(distinct date_trunc('month',
             event_date))                        as active_months
-    from RETAINIQ.STAGING.stg_events
+    from {{ ref('stg_events') }}
     group by customer_id
 ),
-
 rfm_base as (
     select
         c.customer_id,
@@ -28,7 +25,7 @@ rfm_base as (
         c.acquisition_channel,
         s.is_churned,
         s.tenure_days,
-        datediff('day', e.last_event_date, 
+        datediff('day', e.last_event_date,
             current_date())                     as recency_days,
         e.total_events                          as frequency,
         c.mrr                                   as monetary,
@@ -37,7 +34,6 @@ rfm_base as (
     left join subscriptions s using (customer_id)
     left join events e using (customer_id)
 ),
-
 rfm_scores as (
     select
         *,
@@ -49,7 +45,6 @@ rfm_scores as (
             order by monetary asc)              as m_score
     from rfm_base
 ),
-
 final as (
     select
         customer_id,
@@ -71,21 +66,20 @@ final as (
         (r_score + f_score + m_score)           as rfm_total,
         concat(r_score, f_score, m_score)       as rfm_segment,
         case
-            when r_score >= 4 
-                and f_score >= 4 
+            when r_score >= 4
+                and f_score >= 4
                 and m_score >= 4                then 'CHAMPION'
-            when r_score >= 3 
+            when r_score >= 3
                 and f_score >= 3               then 'LOYAL'
-            when r_score >= 4 
+            when r_score >= 4
                 and f_score <= 2               then 'NEW_CUSTOMER'
-            when r_score <= 2 
-                and f_score >= 3 
+            when r_score <= 2
+                and f_score >= 3
                 and m_score >= 3               then 'AT_RISK'
-            when r_score <= 2 
+            when r_score <= 2
                 and f_score <= 2               then 'LOST'
             else                                    'POTENTIAL'
         end                                     as rfm_label
     from rfm_scores
 )
-
 select * from final

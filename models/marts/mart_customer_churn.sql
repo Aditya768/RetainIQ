@@ -1,8 +1,8 @@
 with customers as (
-    select * from RETAINIQ.STAGING.stg_customers
+    select * from {{ ref('stg_customers') }}
 ),
 subscriptions as (
-    select * from RETAINIQ.STAGING.stg_subscriptions
+    select * from {{ ref('stg_subscriptions') }}
 ),
 events as (
     select
@@ -13,7 +13,7 @@ events as (
         avg(session_duration_min)               as avg_session_duration,
         datediff('day', max(event_date), current_date()) as days_since_last_active,
         count(distinct date_trunc('month', event_date)) as active_months
-    from RETAINIQ.STAGING.stg_events
+    from {{ ref('stg_events') }}
     group by customer_id
 ),
 payments as (
@@ -22,7 +22,7 @@ payments as (
         count(*)                                as total_payments,
         sum(case when is_failed then 1 else 0 end) as failed_payments,
         round(sum(case when is_failed then 1 else 0 end) / nullif(count(*), 0) * 100, 2) as payment_failure_rate
-    from RETAINIQ.STAGING.stg_payments
+    from {{ ref('stg_payments') }}
     group by customer_id
 ),
 support as (
@@ -32,11 +32,11 @@ support as (
         avg(satisfaction_score)                 as avg_satisfaction,
         sum(case when priority = 'CRITICAL' then 1 else 0 end) as critical_tickets,
         sum(case when is_resolved = false then 1 else 0 end) as open_tickets
-    from RETAINIQ.STAGING.stg_support_tickets
+    from {{ ref('stg_support_tickets') }}
     group by customer_id
 ),
 firmographics as (
-    select * from RETAINIQ.STAGING.stg_firmographics
+    select * from {{ ref('stg_firmographics') }}
 ),
 final as (
     select
